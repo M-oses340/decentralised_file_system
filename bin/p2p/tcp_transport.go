@@ -6,6 +6,7 @@ import (
 	"sync"
 )
 
+// TCPTransportOpts defines options for TCPTransport
 type TCPTransportOpts struct {
 	ListenAddr    string
 	HandshakeFunc HandshakeFunc
@@ -13,6 +14,7 @@ type TCPTransportOpts struct {
 	OnPeer        func(Peer) error
 }
 
+// TCPTransport manages multiple TCP peers
 type TCPTransport struct {
 	listenAddr    string
 	listener      net.Listener
@@ -24,9 +26,13 @@ type TCPTransport struct {
 	peers map[net.Addr]Peer
 }
 
-func NewTCPTransport(opts TCPTransportOpts) *TCPTransport {
+// Temp is a simple message type
+type Temp struct {
+	Value string
+}
 
-	// Apply defaults if options missing
+// NewTCPTransport creates a TCPTransport
+func NewTCPTransport(opts TCPTransportOpts) *TCPTransport {
 	if opts.HandshakeFunc == nil {
 		opts.HandshakeFunc = NOPHandshakeFunc()
 	}
@@ -43,9 +49,9 @@ func NewTCPTransport(opts TCPTransportOpts) *TCPTransport {
 	}
 }
 
+// ListenAndAccept starts listening and accepting connections
 func (t *TCPTransport) ListenAndAccept() error {
 	var err error
-
 	t.listener, err = net.Listen("tcp", t.listenAddr)
 	if err != nil {
 		return err
@@ -66,35 +72,33 @@ func (t *TCPTransport) startAcceptLoop() {
 	}
 }
 
-type Temp struct{}
-
 func (t *TCPTransport) handleConn(conn net.Conn) {
 	peer := NewTCPPeer(conn, false)
 
-	// Run handshake
+	// handshake
 	if err := t.HandshakeFunc(peer); err != nil {
-		fmt.Printf("Handshake failed: %s\n", err)
+		fmt.Printf("Handshake error: %s\n", err)
 		conn.Close()
 		return
 	}
 
-	// Add peer
+	// register peer
 	t.mu.Lock()
 	t.peers[conn.RemoteAddr()] = peer
 	t.mu.Unlock()
 
 	fmt.Printf("New peer connected: %s\n", conn.RemoteAddr())
 
-	// Fire callback if provided
+	// optional callback
 	if t.OnPeer != nil {
 		if err := t.OnPeer(peer); err != nil {
 			fmt.Printf("OnPeer error: %s\n", err)
 		}
 	}
 
-	// Read messages forever
-	msg := &Temp{}
+	// read messages
 	for {
+		msg := &Temp{}
 		if err := t.decoder.Decode(conn, msg); err != nil {
 			fmt.Printf("TCP decode error: %s\n", err)
 			return
