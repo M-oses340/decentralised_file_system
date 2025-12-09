@@ -7,10 +7,13 @@ import (
 )
 
 func main() {
-	tr := p2p.NewTCPTransport(":3000") // FIXED
+	tr := p2p.NewTCPTransport(p2p.TCPTransportOpts{
+		ListenAddr: ":3000",
+	})
+
 	if err := tr.ListenAndAccept(); err != nil {
 		log.Fatal(err)
 	}
 
-	select {}
+	select {} // keep running forever
 }
