@@ -15,6 +15,12 @@ func NewTCPPeer(conn net.Conn, outbound bool) *TCPPeer {
 	}
 }
 
+// Conn returns the underlying net.Conn
 func (p *TCPPeer) Conn() net.Conn {
 	return p.conn
+}
+
+// Close closes the connection
+func (p *TCPPeer) Close() error {
+	return p.conn.Close()
 }

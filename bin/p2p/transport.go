@@ -1,7 +1,9 @@
 package p2p
 
+import "net"
+
+// Peer represents a connected remote peer
 type Peer interface {
-}
-type Transport interface {
-	ListenAndAccept() error
+	Conn() net.Conn
+	Close() error
 }

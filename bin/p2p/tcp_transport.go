@@ -96,13 +96,41 @@ func (t *TCPTransport) handleConn(conn net.Conn) {
 		}
 	}
 
-	// read messages
+	// read messages and broadcast
 	for {
 		msg := &Temp{}
 		if err := t.decoder.Decode(conn, msg); err != nil {
-			fmt.Printf("TCP decode error: %s\n", err)
+			fmt.Printf("TCP decode error from %s: %s\n", conn.RemoteAddr(), err)
+			t.removePeer(conn)
 			return
 		}
-		fmt.Printf("Received message: %+v\n", msg)
+
+		fmt.Printf("Received message from %s: %+v\n", conn.RemoteAddr(), msg)
+
+		// broadcast to all other peers
+		t.broadcast(msg, peer)
+	}
+}
+
+// removePeer removes a disconnected peer
+func (t *TCPTransport) removePeer(conn net.Conn) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	delete(t.peers, conn.RemoteAddr())
+}
+
+// broadcast sends the message to all connected peers except sender
+func (t *TCPTransport) broadcast(msg *Temp, sender Peer) {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	for _, peer := range t.peers {
+		if peer == sender {
+			continue
+		}
+		_, err := peer.Conn().Write([]byte(msg.Value))
+		if err != nil {
+			fmt.Printf("Broadcast error to %s: %s\n", peer.Conn().RemoteAddr(), err)
+		}
 	}
 }
