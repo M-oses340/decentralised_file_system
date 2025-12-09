@@ -1,7 +1,15 @@
 package main
 
-import "fmt"
+import (
+	"log"
+
+	"github.com/M-oses340/decentralised_file_system/bin/p2p"
+)
 
 func main() {
-	fmt.Println("Hello World")
+	tr := p2p.NewTCPTransport(":3000")
+	if err := tr.ListenAndAccept(); err != nil {
+		log.Fatal(err)
+	}
+	select {}
 }

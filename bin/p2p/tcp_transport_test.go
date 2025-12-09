@@ -26,4 +26,6 @@ func TestTransport(t *testing.T) {
 	// Cleanup: close the listener after the test
 	err = tr.listener.Close()
 	assert.Nil(t, err)
+
+	select {}
 }

@@ -6,6 +6,15 @@ import (
 	"sync"
 )
 
+type TCPPeer struct {
+	conn     net.Conn
+	outbound bool
+}
+
+func NewTCPPeer(conn net.Conn, outbound bool) *TCPPeer {
+	return &TCPPeer{conn: conn, outbound: outbound}
+}
+
 type TCPTransport struct {
 	listenAddr string
 	listener   net.Listener
@@ -50,7 +59,8 @@ func (t *TCPTransport) startAcceptLoop() {
 }
 
 func (t *TCPTransport) handleConn(conn net.Conn) {
-	fmt.Println("New incoming connection from", conn.RemoteAddr())
+	peer := NewTCPPeer(conn, true)
+	fmt.Println("New incoming connection from", peer)
 
 	// TODO: wrap net.Conn into your Peer object
 	// Example:
